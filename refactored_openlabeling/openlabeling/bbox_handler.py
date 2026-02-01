@@ -93,6 +93,8 @@ class DragBoundingBox:
 
             if change_was_made:
                 action = "resize_bbox:{}:{}:{}:{}".format(x_left, y_top, x_right, y_bottom)
+                # Need to handle the case where edit_bbox_callback is called with additional parameters
+                # The edit_bbox_callback here is actually the app's method, which has access to all needed parameters
                 edit_bbox_callback(self.selected_object, action)
                 # update the selected bbox
                 self.selected_object = [class_name, x_left, y_top, x_right, y_bottom]
@@ -340,7 +342,31 @@ class BoundingBoxHandler:
 
                     from .utils import yolo_format
                     yolo_line = yolo_format(class_index, (xmin, ymin), (xmax, ymax), width, height)
-                    ind = self.find_index(obj_to_edit, img_objects)
+                    
+                    # Read the current annotation file to get the objects list
+                    with open(ann_path, 'r') as temp_file:
+                        temp_lines = temp_file.readlines()
+                    
+                    # Parse the lines to recreate the objects for finding the index
+                    temp_objects = []
+                    for temp_line in temp_lines:
+                        parts = temp_line.strip().split()
+                        if len(parts) >= 5:  # Make sure it's a valid annotation line
+                            temp_class_idx = int(parts[0])
+                            temp_center_x = float(parts[1])
+                            temp_center_y = float(parts[2])
+                            temp_width = float(parts[3])
+                            temp_height = float(parts[4])
+                            
+                            # Convert back to xmin, ymin, xmax, ymax format for comparison
+                            temp_xmin = int(width * temp_center_x - width * temp_width/2.0)
+                            temp_xmax = int(width * temp_center_x + width * temp_width/2.0)
+                            temp_ymin = int(height * temp_center_y - height * temp_height/2.0)
+                            temp_ymax = int(height * temp_center_y + height * temp_height/2.0)
+                            
+                            temp_objects.append([temp_class_idx, temp_xmin, temp_ymin, temp_xmax, temp_ymax])
+                    
+                    ind = self.find_index(obj_to_edit, temp_objects)
                     i = 0
 
                     with open(ann_path, 'w') as new_file:
