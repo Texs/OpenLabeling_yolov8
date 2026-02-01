@@ -432,16 +432,7 @@ class OpenLabelingApp:
             annotation_paths = self.bbox_handler.get_annotation_paths(img_path, self.config.annotation_formats)
             
             if self.drag_bbox.anchor_being_dragged is not None:
-                # Create a wrapper function for edit_bbox that includes all required parameters
-                def edit_bbox_wrapper(obj_to_edit, action):
-                    self.bbox_handler.edit_bbox(
-                        obj_to_edit, action,
-                        self.image_path_list, self.img_index,
-                        self.config.annotation_formats,
-                        self.img.shape[1], self.img.shape[0],
-                        self.video_name_dict
-                    )
-                self.drag_bbox.handler_mouse_move(self.mouse_x, self.mouse_y, edit_bbox_wrapper)
+                self.drag_bbox.handler_mouse_move(self.mouse_x, self.mouse_y, self.bbox_handler.edit_bbox)
             
             # Draw already done bounding boxes
             tmp_img = self.bbox_handler.draw_bboxes_from_file(
